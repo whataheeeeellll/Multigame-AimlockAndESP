@@ -6,7 +6,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-
+local x
 if Terrain then
     Terrain.WaterWaveSize = 0
     Terrain.WaterWaveSpeed = 0
