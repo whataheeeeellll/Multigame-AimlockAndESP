@@ -2,6 +2,7 @@
 
 ## NOT universal but especially configured for a game scrpit with Aimlock, ESP and some other small features without any GUI
 ### loadstring:
+
 lua```
 loadstring(game:HttpGet("https://raw.githubusercontent.com/whataheeeeellll/Multigame-AimlockAndESP/main/loader.lua"))()
 ```
