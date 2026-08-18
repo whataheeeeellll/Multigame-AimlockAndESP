@@ -119,27 +119,25 @@ function Loader:GetGameInfo()
     
     if success then
         return {
-            GameId = game.GameId,
-            PlaceId = game.PlaceId,
+            GameId = tostring(game.GameId),
+            PlaceId = tostring(game.PlaceId),
             Name = gameInfo.Name
         }
     else
         return {
-            GameId = game.GameId,
-            PlaceId = game.PlaceId,
+            GameId = tostring(game.GameId),
+            PlaceId = tostring(game.PlaceId),
             Name = "Unknown Game"
         }
     end
 end
 
 function Loader:LoadScript(gameId)
-    local gameIdStr = tostring(gameId)
-    
     for _, mirror in ipairs(self.Config.Mirrors) do
-        local url = mirror .. gameIdStr .. ".lua"
+        local url = mirror .. gameId .. ".lua"
         local result = self:HttpGet(url)
         
-        if result and result ~= "" and not result:find("404") and not result:find("Not Found") then
+        if result and #result > 10 and not result:find("<!DOCTYPE") and not result:find("<html") and not result:find("404") then
             return result, url
         end
     end
