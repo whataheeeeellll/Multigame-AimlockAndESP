@@ -1,13 +1,19 @@
+if getgenv().MultiAimlockAndESPExecuted then
+    return
+end
+getgenv().MultiAimlockAndESPExecuted = true
+
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
 local HttpService = game:GetService("HttpService")
-local MarketplaceService = game:GetService("MarketplaceService")
 local TweenService = game:GetService("TweenService")
 
 local Loader = {}
 Loader.__index = Loader
+
+Loader.Notifications = {}
 
 Loader.Config = {
     Mirrors = {
@@ -26,9 +32,11 @@ function Loader:Notify(title, message, duration, color)
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = game.CoreGui
     
+    local offset = (#self.Notifications * 80)
+    
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(0, 280, 0, 70)
-    Frame.Position = UDim2.new(1, 300, 1, 10)
+    Frame.Position = UDim2.new(1, 300, 1, -10 - offset)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Frame.BorderSizePixel = 0
     Frame.Parent = ScreenGui
@@ -62,22 +70,41 @@ function Loader:Notify(title, message, duration, color)
     MessageLabel.TextWrapped = true
     MessageLabel.Parent = Frame
     
-    Frame.Position = UDim2.new(1, 300, 1, 10)
+    table.insert(self.Notifications, ScreenGui)
+    
+    Frame.Position = UDim2.new(1, 300, 1, -10 - offset)
     Frame.Transparency = 1
     
-    TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Position = UDim2.new(1, -290, 1, -80),
+    TweenService:Create(Frame, TweenInfo.new(0.4), {
+        Position = UDim2.new(1, -290, 1, -80 - offset),
         Transparency = 0
     }):Play()
     
     task.spawn(function()
         task.wait(duration)
-        TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(1, 300, 1, -80),
+        TweenService:Create(Frame, TweenInfo.new(0.4), {
+            Position = UDim2.new(1, 300, 1, -80 - offset),
             Transparency = 1
         }):Play()
         task.wait(0.4)
         ScreenGui:Destroy()
+        
+        for i, notif in ipairs(self.Notifications) do
+            if notif == ScreenGui then
+                table.remove(self.Notifications, i)
+                break
+            end
+        end
+        
+        for i, notif in ipairs(self.Notifications) do
+            local f = notif:FindFirstChildOfClass("Frame")
+            if f then
+                local newOffset = (i - 1) * 80
+                TweenService:Create(f, TweenInfo.new(0.3), {
+                    Position = UDim2.new(1, -290, 1, -80 - newOffset)
+                }):Play()
+            end
+        end
     end)
 end
 
@@ -112,32 +139,12 @@ function Loader:HttpGet(url)
     return nil
 end
 
-function Loader:GetGameInfo()
-    local success, gameInfo = pcall(function()
-        return MarketplaceService:GetProductInfo(game.GameId)
-    end)
-    
-    if success then
-        return {
-            GameId = tostring(game.GameId),
-            PlaceId = tostring(game.PlaceId),
-            Name = gameInfo.Name
-        }
-    else
-        return {
-            GameId = tostring(game.GameId),
-            PlaceId = tostring(game.PlaceId),
-            Name = "Unknown Game"
-        }
-    end
-end
-
 function Loader:LoadScript(gameId)
     for _, mirror in ipairs(self.Config.Mirrors) do
         local url = mirror .. gameId .. ".lua"
         local result = self:HttpGet(url)
         
-        if result and #result > 10 and not result:find("<!DOCTYPE") and not result:find("<html") and not result:find("404") then
+        if result and #result > 10 then
             return result, url
         end
     end
@@ -145,28 +152,27 @@ function Loader:LoadScript(gameId)
 end
 
 function Loader:Execute()
-    local gameInfo = self:GetGameInfo()
+    local placeId = tostring(game.PlaceId)
+    local gameId = tostring(game.GameId)
     
-    self:Notify("Loader", "Detected: " .. gameInfo.Name, 3)
-    
-    local scriptContent, loadedFrom = self:LoadScript(gameInfo.PlaceId)
+    local scriptContent = self:LoadScript(placeId)
     
     if not scriptContent then
-        scriptContent, loadedFrom = self:LoadScript(gameInfo.GameId)
+        scriptContent = self:LoadScript(gameId)
     end
     
     if scriptContent then
-        self:Notify("Success", "Script loaded", 3, Color3.fromRGB(0, 200, 0))
-        
-        local success, error_msg = pcall(function()
+        local success = pcall(function()
             loadstring(scriptContent)()
         end)
         
-        if not success then
-            self:Notify("Error", "Failed to execute", 4, Color3.fromRGB(255, 0, 0))
+        if success then
+            self:Notify("Success", "Script has been found and successfully loaded", 4, Color3.fromRGB(0, 200, 0))
+        else
+            self:Notify("Error", "Unexpected error", 4, Color3.fromRGB(255, 0, 0))
         end
     else
-        self:Notify("Not Found", "No script for: " .. gameInfo.Name, 5, Color3.fromRGB(255, 80, 80))
+        self:Notify("Not Found", "Script does not exist in repository for this game", 5, Color3.fromRGB(255, 80, 80))
     end
 end
 
