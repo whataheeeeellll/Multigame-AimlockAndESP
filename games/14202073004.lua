@@ -1,6 +1,3 @@
---v1.5: +no scope sway when aiming
-if game.PlaceId ~= 4991214437 then return end
-
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
