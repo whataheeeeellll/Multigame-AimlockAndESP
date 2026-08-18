@@ -1,1 +1,141 @@
+local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local TweenService = game:GetService("TweenService")
 
+local Loader = {}
+Loader.__index = Loader
+
+Loader.Config = {
+    Mirrors = {
+        "https://raw.githubusercontent.com/whataheeeeellll/Multigame-AimlockAndESP/main/games/",
+        "https://cdn.jsdelivr.net/gh/whataheeeeellll/Multigame-AimlockAndESP@main/games/",
+    }
+}
+
+function Loader:Notify(title, message, duration, color)
+    duration = duration or 4
+    color = color or Color3.fromRGB(140, 80, 255)
+    
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "LoaderNotification"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = game.CoreGui
+    
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 280, 0, 70)
+    Frame.Position = UDim2.new(1, 10, 1, 10)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Frame.BorderSizePixel = 0
+    Frame.Parent = ScreenGui
+    
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
+    
+    local Stroke = Instance.new("UIStroke", Frame)
+    Stroke.Color = color
+    Stroke.Thickness = 2
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Size = UDim2.new(1, -20, 0, 30)
+    TitleLabel.Position = UDim2.new(0, 10, 0, 5)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = title
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextSize = 15
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = Frame
+    
+    local MessageLabel = Instance.new("TextLabel")
+    MessageLabel.Size = UDim2.new(1, -20, 0, 25)
+    MessageLabel.Position = UDim2.new(0, 10, 0, 35)
+    MessageLabel.BackgroundTransparency = 1
+    MessageLabel.Text = message
+    MessageLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
+    MessageLabel.Font = Enum.Font.Gotham
+    MessageLabel.TextSize = 12
+    MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    MessageLabel.TextWrapped = true
+    MessageLabel.Parent = Frame
+    
+    Frame.Position = UDim2.new(1, 300, 1, 10)
+    Frame.Transparency = 1
+    
+    TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -290, 1, -80),
+        Transparency = 0
+    }):Play()
+    
+    task.spawn(function()
+        task.wait(duration)
+        TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Position = UDim2.new(1, 300, 1, -80),
+            Transparency = 1
+        }):Play()
+        task.wait(0.4)
+        ScreenGui:Destroy()
+    end)
+end
+
+function Loader:GetGameInfo()
+    local success, gameInfo = pcall(function()
+        return MarketplaceService:GetProductInfo(game.GameId)
+    end)
+    
+    if success then
+        return {
+            GameId = game.GameId,
+            PlaceId = game.PlaceId,
+            Name = gameInfo.Name
+        }
+    else
+        return {
+            GameId = game.GameId,
+            PlaceId = game.PlaceId,
+            Name = "Unknown Game"
+        }
+    end
+end
+
+function Loader:LoadScript(gameId)
+    for _, mirror in ipairs(self.Config.Mirrors) do
+        local url = mirror .. gameId .. ".lua"
+        local success, result = pcall(function()
+            return game:HttpGet(url)
+        end)
+        
+        if success and result and not result:find("404") then
+            return result, url
+        end
+    end
+    return nil, nil
+end
+
+function Loader:Execute()
+    local gameInfo = self:GetGameInfo()
+    
+    self:Notify("Loader", "Detected: " .. gameInfo.Name, 3)
+    
+    local scriptContent, loadedFrom = self:LoadScript(gameInfo.PlaceId)
+    
+    if not scriptContent then
+        scriptContent, loadedFrom = self:LoadScript(gameInfo.GameId)
+    end
+    
+    if scriptContent then
+        self:Notify("Success", "Script loaded", 3, Color3.fromRGB(0, 200, 0))
+        
+        local success, error_msg = pcall(function()
+            loadstring(scriptContent)()
+        end)
+        
+        if not success then
+            self:Notify("Error", "Failed to execute", 4, Color3.fromRGB(255, 0, 0))
+        end
+    else
+        self:Notify("Not Found", "No script for: " .. gameInfo.Name, 5, Color3.fromRGB(255, 80, 80))
+    end
+end
+
+local loader = setmetatable({}, Loader)
+loader:Execute()
