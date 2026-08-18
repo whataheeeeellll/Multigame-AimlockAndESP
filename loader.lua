@@ -1,3 +1,7 @@
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local TweenService = game:GetService("TweenService")
@@ -24,7 +28,7 @@ function Loader:Notify(title, message, duration, color)
     
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(0, 280, 0, 70)
-    Frame.Position = UDim2.new(1, 10, 1, 10)
+    Frame.Position = UDim2.new(1, 300, 1, 10)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Frame.BorderSizePixel = 0
     Frame.Parent = ScreenGui
@@ -77,6 +81,37 @@ function Loader:Notify(title, message, duration, color)
     end)
 end
 
+function Loader:HttpGet(url)
+    local success, result = pcall(function()
+        return game:HttpGet(url)
+    end)
+    
+    if success and result then
+        return result
+    end
+    
+    local success2, result2 = pcall(function()
+        return HttpService:GetAsync(url)
+    end)
+    
+    if success2 and result2 then
+        return result2
+    end
+    
+    local success3, result3 = pcall(function()
+        return syn and syn.request and syn.request({
+            Url = url,
+            Method = "GET"
+        }).Body
+    end)
+    
+    if success3 and result3 then
+        return result3
+    end
+    
+    return nil
+end
+
 function Loader:GetGameInfo()
     local success, gameInfo = pcall(function()
         return MarketplaceService:GetProductInfo(game.GameId)
@@ -98,13 +133,13 @@ function Loader:GetGameInfo()
 end
 
 function Loader:LoadScript(gameId)
+    local gameIdStr = tostring(gameId)
+    
     for _, mirror in ipairs(self.Config.Mirrors) do
-        local url = mirror .. gameId .. ".lua"
-        local success, result = pcall(function()
-            return game:HttpGet(url)
-        end)
+        local url = mirror .. gameIdStr .. ".lua"
+        local result = self:HttpGet(url)
         
-        if success and result and not result:find("404") then
+        if result and result ~= "" and not result:find("404") and not result:find("Not Found") then
             return result, url
         end
     end
