@@ -5,11 +5,9 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- ESP Configuration
 local HIGHLIGHT_TRANSPARENCY = 0.5
 local FORCEFIELD_COLOR = Color3.fromRGB(0, 255, 0)
 
--- Aimbot Configuration
 local MAX_DISTANCE = 500
 local FOV_RADIUS = 150
 local FOV_COLOR = Color3.fromRGB(255, 255, 255)
@@ -26,7 +24,6 @@ local BODY_PARTS_PRIORITY = {
     "Right Leg"
 }
 
--- ESP Functions
 local playerData = {}
 
 local function getTeamColor(player)
@@ -150,7 +147,6 @@ Players.PlayerRemoving:Connect(function(player)
     cleanupPlayerData(player)
 end)
 
--- FOV Circle (Always visible)
 local fovCircle = Instance.new("ScreenGui")
 fovCircle.Name = "FOVCircle"
 fovCircle.ResetOnSpawn = false
@@ -183,7 +179,6 @@ fovStroke.Color = FOV_COLOR
 fovStroke.Transparency = 0
 fovStroke.Parent = fovCircleDraw
 
--- Aimbot Functions
 local aimbotEnabled = false
 local aimConnection = nil
 local currentTarget = nil
